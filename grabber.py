@@ -5,7 +5,8 @@ __author__ = "Duong Dang"
 __version__ = "0.1"
 
 import logging, sys, re
-import urllib2
+import urllib2, datetime
+import pytz
 from BeautifulSoup import BeautifulSoup
 from xml.dom.minidom import Document
 from xml.dom.minidom import DOMImplementation
@@ -19,9 +20,9 @@ doctype = imp.createDocumentType(
 
 
 logger = logging.getLogger("vtv4.py")
-
-
-
+hanoitz = pytz.timezone('Etc/GMT-7')
+paristz = pytz.timezone('Europe/Paris')
+fmt = '%Y%m%d %H:%M:%S %z'
 
 def main():
     import optparse
@@ -47,9 +48,9 @@ def main():
     if not options.date:
         parser.error("Date argument missing")
 
-    year = options.date[0:4]
-    month = options.date[4:6]
-    day = options.date[6:]
+    year = int(options.date[0:4])
+    month = int(options.date[4:6])
+    day = int(options.date[6:])
 
     if options.id not in [ "vtv4", "vtv3", "vtv2", "vtv1", "vtv6", "vtv9" ]:
         parser.error("Only vtv channels supported in this script")
@@ -58,7 +59,7 @@ def main():
         options.output = "%s_%s.xml"%(options.id,options.date)
     outf = open(options.output,'w')
     outf.write('')
-    url = "http://vtv.vn/LichPS/GetLichPhatsong?nam=%s&thang=%s&ngay=%s&kenh=%s"%(year,month,day,options.id)
+    url = "http://vtv.vn/LichPS/GetLichPhatsong?nam=%d&thang=%d&ngay=%d&kenh=%s"%(year,month,day,options.id)
     page = urllib2.urlopen(url)
     soup = BeautifulSoup(page)
 
@@ -81,6 +82,7 @@ def main():
     last_length = None
     last_h = None
     last_m = None
+    last_dt = None
 
     for prog in soup('tr'):
         timenode = prog('td')[0]
@@ -89,18 +91,26 @@ def main():
         m = re.search(r"(?P<HOUR>\d+)h\s*:\s*(?P<MINUTE>\d+)",t)
         if not m:
             continue
-        hour=m.group('HOUR')
-        minute = m.group('MINUTE')
+        hour = int(m.group('HOUR'))
+        minute = int(m.group('MINUTE'))
         titlex = titlenode.find('strong').text
         descx = titlenode.contents[4]
         descx = re.sub(r"^\s*","",descx)
         descx = re.sub(r"\s*$","",descx)
+        dt = datetime.datetime(year = year, month = month, day = day,
+                               hour = hour, minute = minute,
+                               tzinfo = hanoitz
+                               )
+        dt = dt.astimezone(paristz).strftime(fmt)
+        end_dt = datetime.datetime(year = year, month = month, day = day,
+                               hour = 23, minute = 59,
+                               tzinfo = hanoitz
+                               )
+        end_dt = end_dt.astimezone(paristz).strftime(fmt)
 
         programme = doc.createElement("programme")
-        programme.setAttribute('start',"%s%s%s +0700"
-                              %(options.date,hour,minute))
-        programme.setAttribute('stop',"%s%s%s +0700"
-                              %(options.date,'23','59'))
+        programme.setAttribute('start', dt )
+        programme.setAttribute('stop', end_dt )
 
         programme.setAttribute('channel', options.id)
         title = doc.createElement('title')
@@ -145,7 +155,7 @@ def main():
         last_h = hour
         last_m = minute
         last_length = length
-
+        last_dt = dt
 #    doc.writexml(outf, encoding = "UTF-8")
     outf.write(doc.toprettyxml(indent="  ", encoding = "UTF-8"))
     outf.close()
