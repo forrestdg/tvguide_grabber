@@ -111,6 +111,8 @@ def main():
         programme = doc.createElement("programme")
         programme.setAttribute('start', dt )
         programme.setAttribute('stop', end_dt )
+        if last_programme:
+            last_programme.setAttribute('stop',dt)
 
         programme.setAttribute('channel', options.id)
         title = doc.createElement('title')
@@ -146,9 +148,6 @@ def main():
             last_length.removeChild(last_length.firstChild)
             last_length.appendChild(text)
 
-        if last_programme:
-            last_programme.setAttribute('stop',"%s%s%s +0700"
-                                   %(options.date,hour,minute))
 
         tv.appendChild(programme)
         last_programme = programme
