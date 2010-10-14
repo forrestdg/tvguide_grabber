@@ -8,6 +8,15 @@ import logging, sys, re
 import urllib2
 from BeautifulSoup import BeautifulSoup
 from xml.dom.minidom import Document
+from xml.dom.minidom import DOMImplementation
+
+imp = DOMImplementation()
+doctype = imp.createDocumentType(
+    qualifiedName='tv',
+    publicId='',
+    systemId="http://www.kazer.org/xmltv.dtd",
+)
+
 
 logger = logging.getLogger("vtv4.py")
 
@@ -53,11 +62,12 @@ def main():
     page = urllib2.urlopen(url)
     soup = BeautifulSoup(page)
 
-    doc = Document()
-    doc.doctype = "http://www.kazer.org/xmltv.dtd"
-    tv = doc.createElement('tv')
+    doc = imp.createDocument(None, 'tv', doctype)
+    tv = doc.lastChild
+#    doc = Document()
+#    tv = doc.createElement('tv')
+#    doc.appendChild(tv)
     tv.setAttribute("generator-info-name", "grabber.py")
-    doc.appendChild(tv)
     chan = doc.createElement('channel')
     chan.setAttribute('id',options.id)
     chan_name = doc.createElement('display-name')
@@ -92,6 +102,27 @@ def main():
         programme.setAttribute('stop',"%s%s%s +0700"
                               %(options.date,'23','59'))
 
+        programme.setAttribute('channel', options.id)
+        title = doc.createElement('title')
+        title.setAttribute('lang','vi')
+        text = doc.createTextNode(titlex)
+        title.appendChild(text)
+        programme.appendChild(title)
+
+        if descx != "":
+            desc = doc.createElement('desc')
+            desc.setAttribute('lang','vi')
+            text = doc.createTextNode(descx)
+            desc.appendChild(text)
+            programme.appendChild(desc)
+
+
+        category = doc.createElement('category')
+        category.setAttribute('lang','en')
+        text = doc.createTextNode('Unknown')
+        category.appendChild(text)
+        programme.appendChild(category)
+
         l = 23*60+59 - int(hour)*60 - int(minute)
 
         length = doc.createElement('length')
@@ -109,33 +140,14 @@ def main():
             last_programme.setAttribute('stop',"%s%s%s +0700"
                                    %(options.date,hour,minute))
 
-        programme.setAttribute('channel', options.id)
-        title = doc.createElement('title')
-        title.setAttribute('lang','vi')
-        text = doc.createTextNode(titlex)
-        title.appendChild(text)
-        programme.appendChild(title)
-
-        category = doc.createElement('category')
-        category.setAttribute('lang','en')
-        text = doc.createTextNode('Unknown')
-        category.appendChild(text)
-        programme.appendChild(category)
-
-        if titlenode.text !="":
-            desc = doc.createElement('desc')
-            desc.setAttribute('lang','vi')
-            if descx != "":
-                text = doc.createTextNode(descx)
-                desc.appendChild(text)
-                programme.appendChild(desc)
         tv.appendChild(programme)
         last_programme = programme
         last_h = hour
         last_m = minute
         last_length = length
 
-    outf.write(doc.toprettyxml(indent="  ").encode("utf-8"))
+#    doc.writexml(outf, encoding = "UTF-8")
+    outf.write(doc.toprettyxml(indent="  ", encoding = "UTF-8"))
     outf.close()
 
 if __name__ == '__main__':
