@@ -67,6 +67,10 @@ def main():
     chan.appendChild(chan_name)
 
     tv.appendChild(chan)
+    last_programme = None
+    last_length = None
+    last_h = None
+    last_m = None
 
     for prog in soup('tr'):
         timenode = prog('td')[0]
@@ -85,12 +89,39 @@ def main():
         programme = doc.createElement("programme")
         programme.setAttribute('start',"%s%s%s +0700"
                               %(options.date,hour,minute))
+        programme.setAttribute('stop',"%s%s%s +0700"
+                              %(options.date,'23','59'))
+
+        l = 23*60+59 - int(hour)*60 - int(minute)
+
+        length = doc.createElement('length')
+        length.setAttribute('units','minutes')
+        text = doc.createTextNode(str(l))
+        length.appendChild(text)
+        programme.appendChild(length)
+        if last_length:
+            last_l = (int(hour) - int(last_h))*60 + int(minute) - int(last_m)
+            text = doc.createTextNode(str(last_l))
+            last_length.removeChild(last_length.firstChild)
+            last_length.appendChild(text)
+
+        if last_programme:
+            last_programme.setAttribute('stop',"%s%s%s +0700"
+                                   %(options.date,hour,minute))
+
         programme.setAttribute('channel', options.id)
         title = doc.createElement('title')
         title.setAttribute('lang','vi')
         text = doc.createTextNode(titlex)
         title.appendChild(text)
         programme.appendChild(title)
+
+        category = doc.createElement('category')
+        category.setAttribute('lang','en')
+        text = doc.createTextNode('Unknown')
+        category.appendChild(text)
+        programme.appendChild(category)
+
         if titlenode.text !="":
             desc = doc.createElement('desc')
             desc.setAttribute('lang','vi')
@@ -99,6 +130,10 @@ def main():
                 desc.appendChild(text)
                 programme.appendChild(desc)
         tv.appendChild(programme)
+        last_programme = programme
+        last_h = hour
+        last_m = minute
+        last_length = length
 
     outf.write(doc.toprettyxml(indent="  ").encode("utf-8"))
     outf.close()
