@@ -80,6 +80,7 @@ def main():
         titlex = titlenode.find('strong').text
         descx = titlenode.contents[4]
         descx = re.sub(r"^\s*","",descx)
+        descx = re.sub(r"\s*$","",descx)
 
         programme = doc.createElement("programme")
         programme.setAttribute('start',"%s%s%s +0700"
