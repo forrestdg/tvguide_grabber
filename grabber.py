@@ -42,14 +42,14 @@ def main():
     month = options.date[4:6]
     day = options.date[6:]
 
-    if options.id != "vtv4":
-        parser.error("Only channel vtv4 supported in this script")
+    if options.id not in [ "vtv4", "vtv3", "vtv2", "vtv1", "vtv6", "vtv9" ]:
+        parser.error("Only vtv channels supported in this script")
 
     if not options.output:
         options.output = "%s_%s.xml"%(options.id,options.date)
     outf = open(options.output,'w')
     outf.write('')
-    url = "http://vtv.vn/LichPS/GetLichPhatsong?nam=%s&thang=%s&ngay=%s&kenh=VTV4"%(year,month,day)
+    url = "http://vtv.vn/LichPS/GetLichPhatsong?nam=%s&thang=%s&ngay=%s&kenh=%s"%(year,month,day,options.id)
     page = urllib2.urlopen(url)
     soup = BeautifulSoup(page)
 
@@ -59,10 +59,10 @@ def main():
     tv.setAttribute("generator-info-name", "grabber.py")
     doc.appendChild(tv)
     chan = doc.createElement('channel')
-    chan.setAttribute('id','vtv4')
+    chan.setAttribute('id',options.id)
     chan_name = doc.createElement('display-name')
     chan_name.setAttribute('lang','vi')
-    text = doc.createTextNode('VTV 4')
+    text = doc.createTextNode('VTV %s'%re.search(r"\d+",options.id).group(0))
     chan_name.appendChild(text)
     chan.appendChild(chan_name)
 
