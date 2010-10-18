@@ -73,7 +73,7 @@ def main():
     chan.setAttribute('id',options.id)
     chan_name = doc.createElement('display-name')
     chan_name.setAttribute('lang','vi')
-    text = doc.createTextNode('VTV %s'%re.search(r"\d+",options.id).group(0))
+    text = doc.createTextNode('Vietnam VTV%s'%re.search(r"\d+",options.id).group(0))
     chan_name.appendChild(text)
     chan.appendChild(chan_name)
 
