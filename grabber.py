@@ -22,7 +22,7 @@ doctype = imp.createDocumentType(
 logger = logging.getLogger("vtv4.py")
 hanoitz = pytz.timezone('Etc/GMT-7')
 paristz = pytz.timezone('Europe/Paris')
-fmt = '%Y%m%d %H:%M:%S %z'
+fmt = '%Y%m%d%H%M %z'
 
 def main():
     import optparse
@@ -76,6 +76,14 @@ def main():
     text = doc.createTextNode('Vietnam VTV%s'%re.search(r"\d+",options.id).group(0))
     chan_name.appendChild(text)
     chan.appendChild(chan_name)
+    if options.id in  ("vtv4","VTV4"):
+        icon = doc.createElement('icon')
+        icon.setAttribute("src","http://www.ariase.com/media/television/logo-132x99/vtv4.jpg")
+        chan.appendChild(icon)
+    
+
+#    <icon src="http://www.lyngsat-logo.com/logo/tv/ff/france4.jpg"/>
+
 
     tv.appendChild(chan)
     last_programme = None
@@ -85,15 +93,19 @@ def main():
     last_dt = None
 
     for prog in soup('tr'):
+# <td class="vtv-dskenh" valign="top"><nobr>
+# <strong></strong></nobr><nobr>00h : 00</nobr>
+
+# </td>
         timenode = prog('td')[0]
         titlenode = prog('td')[1]
-        t=timenode.text
+        t=timenode('nobr')[1].contents[0]
         m = re.search(r"(?P<HOUR>\d+)h\s*:\s*(?P<MINUTE>\d+)",t)
         if not m:
             continue
         hour = int(m.group('HOUR'))
         minute = int(m.group('MINUTE'))
-        titlex = titlenode.find('strong').text
+        titlex = titlenode.find('strong').contents[0]
         descx = titlenode.contents[4]
         descx = re.sub(r"^\s*","",descx)
         descx = re.sub(r"\s*$","",descx)
